@@ -1,5 +1,7 @@
 #Python HTTPS SimpleHTTPServer
+
 ##https extension of python -m SimpleHTTPServer
+
 When creating XSS POC's I found that most websites would throw an error at the user if there wasn't a valid SSL certificate, which made the 
 screenshots look bad because there would be an error in the URL bar showing the page was insecure.
 
