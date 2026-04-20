@@ -1,24 +1,8 @@
 #!/usr/bin/env python3
 from http.server import HTTPServer, SimpleHTTPRequestHandler, HTTPStatus
 from argparse import RawTextHelpFormatter, ArgumentParser
-import ssl,sys
+import ssl,sys,socket
 
-'''
-https extension of python -m SimpleHTTPServer
-
-When creating XSS POC's I found that most websites would throw an error at the user if there wasn't a valid SSL certificate, 
-which made the screenshots look bad because there would be an error in the URL bar showing the page was insecure.
-
-This server uses an SSL certificate to create an SSL wrapper for the SimpleHTTPRequestHandler to do the same job as python 
--m SimpleHTTPServer but with SSL to get around these errors. Whilst I was working on it I also added some argument handling 
-so you could specify other certificates, ports, or hostnames and ips as required.
-
-As it is just a wrapper for SimpleHTTPRequestHandler this shouldn't be used as a production server, just for demo's of POCs 
-for short durations, exactly in the same way you might use python -m SimpleHTTPServer.
-
-@b1gdave
-
-'''
 
 #Defaults
 ip = "0.0.0.0"
@@ -39,8 +23,18 @@ if options.cert : cert = options.cert
 
 #Start the server
 try:
-	httpd = HTTPServer((str(ip),int(port)), SimpleHTTPRequestHandler)
-	httpd.socket = ssl.wrap_socket (httpd.socket, certfile='./'+str(cert), server_side=True)
+	# 1. Create the modern SSL context for a server
+	context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+
+	# 2. Load your certificate (this works exactly like the old certfile argument)
+	context.load_cert_chain(certfile='./'+str(cert))
+
+	# 3. Set up your server
+	httpd = HTTPServer((str(ip), int(port)), SimpleHTTPRequestHandler)
+
+	# 4. Wrap the socket using the context instead of the old ssl module method
+	httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+
 	print("Server started https://"+str(ip)+":"+str(port)+"/ ["+str(cert)+"]")
 	httpd.serve_forever()
 except KeyboardInterrupt as e:
@@ -51,8 +45,8 @@ except Exception as error:
 	if "[Errno 99]" in e:
 		print("Cannot assign address: "+ip+" ("+e+")")
 	if "[Errno 98] Address already in use" in e:
-		print("Port "+str(port)+" is unavailable\n\t- Try lsof -nP | grep -E '^C.*PID|:443.*\(LISTEN\)' on linux or netstat -ano | find \":443\" | find \"LISTENING\" on windows and see what's locking the port.\n\t"+
-		"- VMWare shared VM's are shared over 443 by default and VMWare binds to all addresses. Go to menu Edit -> Preferences -> Shared VMs and click on \"Disable Sharing\", \n\t  or change the port (may require sudo/administrator privs on VMWare and restart).")
+		print("Port "+str(port)+" is unavailable\n\t") #- Try lsof -nP | grep -E '^C.*PID|:443.*\(LISTEN\)' on linux or netstat -ano | find \":443\" | find \"LISTENING\" on windows and see what's locking the port.\n\t"+
+		#"- VMWare shared VM's are shared over 443 by default and VMWare binds to all addresses. Go to menu Edit -> Preferences -> Shared VMs and click on \"Disable Sharing\", \n\t  or change the port (may require sudo/administrator privs on VMWare and restart).")
 	if "[SSL] PEM lib" in e:
 		print("Check the permissions on file "+cert)
 	if "[Errno 2]" in e:
