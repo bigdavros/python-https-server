@@ -12,6 +12,18 @@ certificates, ports, or hostnames and ips as required.
 As it is just a wrapper for SimpleHTTPRequestHandler this shouldn't be used as a production server, just for demo's of POCs for short
 durations, exactly in the same way you might use python -m SimpleHTTPServer.
 
+Get help by running one of these commands:
+```
+python3 https-form-handler.py -h
+python3 https-server.py -h
+```
+
+Options:
+  -h, --help   show this help message and exit
+  --host IP    ip addr or hostname to listen on (default: 0.0.0.0)
+  --port PORT  port to listen on (default: 443)
+  --cert CERT  pem certificate to use (default: cert.pem)
+
 Remember to create a cert.pem file using a command like:
 ```
 openssl req -new -x509 -keyout cert.pem -out cert.pem -days 365 -nodes
